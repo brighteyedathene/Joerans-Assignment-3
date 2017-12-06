@@ -216,16 +216,13 @@ def chunkify(X, y, func, chunks):
 
 chunks = [100, 500, 1000, 5000, 10000, 50000, 100000]#, 500000]
 
-Xquiet, yquiet = load_SUM(quiet_datapath, quiet_target)
-Xnoisy, ynoisy = load_SUM(noisy_datapath, noisy_target)
-#Xlens, ylens = load_movielens()
-Xskin, yskin = load_skin()
+Xlens, ylens = load_movielens()
 
 datasets = [
     #("SUM without noise", Xquiet, yquiet),
     #("SUM with noise", Xnoisy, ynoisy),
     #("MovieLens", Xlens, ylens),
-    ("Skin", Xskin, yskin)
+    ("Skin", Xlens, ylens)
 ]
 
 for name, X, y in datasets:
