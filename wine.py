@@ -21,6 +21,10 @@ def load_wine():
     dataset = pd.read_csv(wine_path, delimiter=';')
     headers = list(dataset.columns.values)
 
+    #headers = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
+
+    import pdb; pdb.set_trace()
+
     X = dataset.loc[:, headers[0:10]]
     y = dataset.loc[:, headers[11]]
     
@@ -28,7 +32,7 @@ def load_wine():
 
 
 classifiers = {
-    #"Linear SVM": SVC(kernel="linear", C=0.025),
+    #"Linear SVM": SVC(kernel="linear", C=0.25),
     #"RBF SVM": SVC(gamma=2, C=1),
     "Neural Network": MLPClassifier(alpha=1)
 }
@@ -65,6 +69,8 @@ def main():
 
         print "soft accuracy:"
         PlotSoftAccuracy(soft_accuracy_sum)
+        normalized_soft_accuracy = NormalizeSoftAccuracy(soft_accuracy)
+        PlotSoftAccuracy(normalized_soft_accuracy)
 
     for name, reg in regressors.iteritems():
         print name
@@ -113,9 +119,9 @@ def AddSoftAccuracy(A, B):
 
 def NormalizeSoftAccuracy(raw_soft_accuracy):
     normalized_soft_accuracy = {}
-    count_max = max(raw_soft_accuracy.itervalues())
+    count_max = sum(raw_soft_accuracy.itervalues())
     for key, value in raw_soft_accuracy.iteritems():
-        normalized_soft_accuracy[key] = value / count_max
+        normalized_soft_accuracy[key] = float(value) / count_max
 
     return normalized_soft_accuracy
 
