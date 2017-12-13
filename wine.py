@@ -41,10 +41,6 @@ def load_wine():
     dataset = pd.read_csv(wine_path, delimiter=';')
     headers = list(dataset.columns.values)
 
-    #headers = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality']
-
-    import pdb; pdb.set_trace()
-
     X = dataset.loc[:, headers[0:10]]
     y = dataset.loc[:, headers[11]]
     
