@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 # metrics and misc
 from sklearn.metrics import r2_score, accuracy_score
 from sklearn.model_selection import KFold
+from sklearn.svm import SVC
 # classifiers
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MaxAbsScaler
@@ -18,6 +19,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing.data import QuantileTransformer
 from sklearn.tree import DecisionTreeClassifier
 from plot import make_plots
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.naive_bayes import GaussianNB
 
 # this lets you get a dataframe instead of a numpy array
 # from sklearn_pandas import DataFrameMapper
@@ -39,16 +43,15 @@ def load_wine():
 
 
 classifiers = {
-    # "Linear SVM": SVC(kernel="linear", C=0.25),
-    # "RBF SVM": SVC(gamma=2, C=1),
+    "Linear SVM": SVC(kernel="linear", C=0.25),
+    "RBF SVM": SVC(gamma=2, C=1),
     "Neural Network": MLPClassifier(alpha=0.0001, activation='relu'),
     "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5),
     "Random Forest Classifier": RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
     "Ada Boost Classifier": AdaBoostClassifier(),
     "Quadratic DiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
-    # "Gaussian Process":  GaussianProcessClassifier(1.0 * RBF(1.0)), ## took too long
-    # "Gaussian Naive Bayes": GaussianNB() ## this one just sucked
-
+     "Gaussian Process":  GaussianProcessClassifier(1.0 * RBF(1.0)), ## took too long
+     "Gaussian Naive Bayes": GaussianNB() ## this one just sucked
 }
 
 scores = {
@@ -95,8 +98,6 @@ def main():
         machine_learn(scaled_X_df, y)
         print '========================'
         print ''
-
-    make_plots(scores)
 
 
 def machine_learn(X, y):
