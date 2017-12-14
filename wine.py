@@ -1,15 +1,19 @@
+import math
+import time
 import numpy as np
 import pandas as pd
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from plot import make_plots
 # regression
 from sklearn.linear_model import LinearRegression
 # metrics and misc
-from sklearn.metrics import r2_score, accuracy_score
+from sklearn.metrics import r2_score, accuracy_score, mean_squared_error
 from sklearn.model_selection import KFold
 # classifiers
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MaxAbsScaler
+from sklearn.svm import SVC
 # transforms
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import Normalizer
@@ -17,15 +21,12 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing.data import QuantileTransformer
 from sklearn.tree import DecisionTreeClassifier
-from plot import make_plots
 
-# this lets you get a dataframe instead of a numpy array
-# from sklearn_pandas import DataFrameMapper
 
 
 wine_path = "data/winequality-white.csv"
 
-num_kfolds = 15
+num_kfolds = 10
 
 
 def load_wine():
@@ -39,28 +40,28 @@ def load_wine():
 
 
 classifiers = {
-    # "Linear SVM": SVC(kernel="linear", C=0.25),
-    # "RBF SVM": SVC(gamma=2, C=1),
-    "Neural Network": MLPClassifier(alpha=0.0001, activation='relu'),
-    "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5),
-    "Random Forest Classifier": RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-    "Ada Boost Classifier": AdaBoostClassifier(),
-    "Quadratic DiscriminantAnalysis": QuadraticDiscriminantAnalysis(),
-    # "Gaussian Process":  GaussianProcessClassifier(1.0 * RBF(1.0)), ## took too long
-    # "Gaussian Naive Bayes": GaussianNB() ## this one just sucked
-
+    #"Linear SVM": SVC(kernel="linear", C=0.25),
+    "RBF SVM: gamma=2, c=1": SVC(gamma=2, C=1),
+    #"RBF SVM: gamma=2, c=0.1": SVC(gamma=2, C=0.1),
+    #"RBF SVM: gamma=4, c=1": SVC(gamma=4, C=1),
+    #"RBF SVM: gamma=4, c=0.1": SVC(gamma=4, C=0.1),
+    "Neural Network: relu, alpha=0.0001": MLPClassifier(alpha=0.0001, activation='relu'),
+    #"Neural Network: relu, alpha=0.01": MLPClassifier(alpha=0.01, activation='relu'),
+    #"Neural Network: relu, alpha=1": MLPClassifier(alpha=1, activation='relu'),
+    #"Neural Network: tanh": MLPClassifier(alpha=0.0001, activation='tanh'),
+    #"Neural Network: logistic": MLPClassifier(alpha=0.0001, activation='logistic'),
+    #"Decision Tree Classifier": DecisionTreeClassifier(max_depth=5),
+    #"Random Forest Classifier": RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+    #"Ada Boost Classifier": AdaBoostClassifier(),
+    #"Quadratic DiscriminantAnalysis": QuadraticDiscriminantAnalysis(), ## doesn't work
+    #"Gaussian Process":  GaussianProcessClassifier(1.0 * RBF(1.0)), ## took too long
+    #"Gaussian Naive Bayes": GaussianNB() ## this one just sucked
 }
 
-scores = {
-    "Neural Network": {},
-    "Decision Tree Classifier": {},
-    "Random Forest Classifier": {},
-    "Ada Boost Classifier": {},
-    "Quadratic DiscriminantAnalysis": {}
-}
+scores = {}
 
 regressors = {
-    "Linear Regression": LinearRegression()
+    #"Linear Regression": LinearRegression()
 }
 
 
@@ -68,23 +69,14 @@ def main():
     X, y = load_wine()
 
     distributions = [
-        ('Unscaled data', X),
-        ('Data after standard scaling',
-         StandardScaler().fit_transform(X)),
-        ('Data after min-max scaling',
-         MinMaxScaler().fit_transform(X)),
-        ('Data after max-abs scaling',
-         MaxAbsScaler().fit_transform(X)),
-        ('Data after robust scaling',
-         RobustScaler(quantile_range=(25, 75)).fit_transform(X)),
-        ('Data after quantile transformation (uniform pdf)',
-         QuantileTransformer(output_distribution='uniform')
-         .fit_transform(X)),
-        ('Data after quantile transformation (gaussian pdf)',
-         QuantileTransformer(output_distribution='normal')
-         .fit_transform(X)),
-        ('Data after sample-wise L2 normalizing',
-         Normalizer().fit_transform(X))
+        #('Unscaled data', X),
+        #('Data after standard scaling', StandardScaler().fit_transform(X)),
+        #('Data after min-max scaling', MinMaxScaler().fit_transform(X)),
+        #('Data after max-abs scaling', MaxAbsScaler().fit_transform(X)),
+        #('Data after robust scaling', RobustScaler(quantile_range=(25, 75)).fit_transform(X)),
+        ('Data after quantile transformation (uniform pdf)', QuantileTransformer(output_distribution='uniform').fit_transform(X)),
+        #('Data after quantile transformation (gaussian pdf)', QuantileTransformer(output_distribution='normal').fit_transform(X)),
+        #('Data after sample-wise L2 normalizing', Normalizer().fit_transform(X)) ## this one sucked
     ]
 
     for label, scaled_X in distributions:
@@ -109,6 +101,7 @@ def machine_learn(X, y):
         try:
             accuracy_sum = 0
             soft_accuracy_sum = {}
+            t0 = time.clock()
             for train, test in kfold.split(X, y=y):
                 print '.',
                 clf.fit(X.iloc[train], y.iloc[train])
@@ -116,39 +109,39 @@ def machine_learn(X, y):
                 accuracy = accuracy_score(y[test], prediction)
 
                 soft_accuracy = GetSoftAccuracy(prediction, y[test])
-
+                soft_accuracy = NormalizeSoftAccuracy(soft_accuracy)
                 soft_accuracy_sum = AddSoftAccuracy(soft_accuracy_sum, soft_accuracy)
 
                 accuracy_sum += accuracy
 
             accuracy_average = accuracy_sum / num_kfolds
-            print "\nAccuracy score:", accuracy_average
-
-            # print "soft accuracy:"
-            # PlotSoftAccuracy(soft_accuracy_sum)
-            normalized_soft_accuracy = NormalizeSoftAccuracy(soft_accuracy)
-            # PlotSoftAccuracy(normalized_soft_accuracy)
-
+            time_taken = time.clock() - t0
+            normalized_soft_accuracy = NormalizeSoftAccuracy(soft_accuracy_sum)
             errors = CombineEquivalentErrorSoftAccuracy(normalized_soft_accuracy)
+            print "Completed %s k-folds" % num_kfolds
+            print "Time taken: ", time_taken, " seconds"
+            print "Accuracy score:", accuracy_average
             PlotErrors(errors)
             scores[name] = errors
+
+
         except ValueError as e:
             print "didn't work: ", e
 
     for name, reg in regressors.iteritems():
         print name
 
-        r2_sum = 0
+        rmse_sum = 0
         for train, test in kfold.split(X, y=y):
             print '.',
             reg.fit(X.iloc[train], y.iloc[train])
             prediction = reg.predict(X.iloc[test])
-            r2 = r2_score(y.iloc[test], prediction)
+            rmse = math.sqrt(mean_squared_error(y.iloc[test], prediction))
 
-            r2_sum += r2
+            rmse_sum += rmse
 
-        r2_average = r2_sum / num_kfolds
-        print '\nr2 score:', r2_average
+        rmse_average = rmse_sum / num_kfolds
+        print '\nRoot mean error:', rmse_average
 
 
 def GetSoftAccuracy(prediction, actual):
@@ -216,6 +209,8 @@ def PlotErrors(errors):
     for key, value in errors.iteritems():
         percentage_sum += value
         print '+/-', key, ':', value, '  (', percentage_sum, ')'
+        if percentage_sum >= 1.0:
+            return
 
 
 if __name__ == '__main__':
