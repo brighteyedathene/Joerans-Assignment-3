@@ -2,6 +2,7 @@ import math
 import time
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from plot import make_plots
 # regression
 from sklearn.linear_model import LinearRegression
@@ -99,7 +100,12 @@ def machine_learn(X, y):
     for name, clf in classifiers.iteritems():
         print name
         try:
+            all_predictions = np.empty(0)
+            prediction_max = 0
+            prediction_min = 10
             accuracy_sum = 0
+            accuracy_min = 1
+            accuracy_max = 0
             soft_accuracy_sum = {}
             t0 = time.clock()
             for train, test in kfold.split(X, y=y):
@@ -112,21 +118,40 @@ def machine_learn(X, y):
                 soft_accuracy = NormalizeSoftAccuracy(soft_accuracy)
                 soft_accuracy_sum = AddSoftAccuracy(soft_accuracy_sum, soft_accuracy)
 
+                np.append(all_predictions, prediction)
+                prediction_max = max(prediction_max, np.max(prediction))
+                prediction_min = min(prediction_min, np.min(prediction))
+
+                accuracy_min = min(accuracy_min, accuracy)
+                accuracy_max = max(accuracy_max, accuracy)
                 accuracy_sum += accuracy
 
             accuracy_average = accuracy_sum / num_kfolds
             time_taken = time.clock() - t0
             normalized_soft_accuracy = NormalizeSoftAccuracy(soft_accuracy_sum)
             errors = CombineEquivalentErrorSoftAccuracy(normalized_soft_accuracy)
+            error_list = ErrorsAsList(errors)
             print "Completed %s k-folds" % num_kfolds
             print "Time taken: ", time_taken, " seconds"
             print "Accuracy score:", accuracy_average
+            print "Accuracy Min:", accuracy_min
+            print "Accuracy Max:", accuracy_max
+            print "Prediction Max:", prediction_max
+            print "Prediction Nax:", prediction_min
             PlotErrors(errors)
             scores[name] = errors
 
+            plt.title("Prediction Distribution (" + name + ")")
+            plt.xlabel("Predicted Rating")
+            plt.ylabel("Count")
+            plt.xlim([0,10])
+            plt.hist(prediction, 10, range=(0,10), alpha=0.45)
+            plt.show()
 
         except ValueError as e:
             print "didn't work: ", e
+
+
 
     for name, reg in regressors.iteritems():
         print name
@@ -202,6 +227,12 @@ def CombineEquivalentErrorSoftAccuracy(soft_accuracy):
 
     return equivalent_errors
 
+def ErrorsAsList(errors):
+    error_list = []
+    for v in errors.itervalues():
+        error_list.append(v)
+
+    return error_list
 
 def PlotErrors(errors):
     print 'Error'
