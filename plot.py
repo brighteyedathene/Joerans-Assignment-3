@@ -13,8 +13,10 @@ def make_plots(scores):
         x_vals = scr.keys()
         y_vals = scr.values()
         plt.bar(x_vals, y_vals)
+        plt.title(key)
         plt.xlabel("Margin of Error")
         plt.ylabel("Percent Coverage")
+        plt.show()
 
 
 def main():
